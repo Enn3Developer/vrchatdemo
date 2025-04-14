@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import * as moduleBindings from './module_bindings/index';
 import { InputManager, InputState, InputUpdateCallback, MOUSE_SENSITIVITY, PITCH_LIMIT_LOW, PITCH_LIMIT_HIGH } from './InputManager';
 import { SceneManager, AnimationName, LocalPlayerRenderData, RemotePlayerRenderData, ServerAnimationState } from './SceneManager';
+import {InputKind} from "./module_bindings/index";
 
 // --- Constants ---
 const MOVEMENT_SPEED = 3.0; // Units per second
@@ -163,6 +164,7 @@ export class GameEngine {
   private lastUpdateTime: number = 0; // For throttling server updates
   private lastSentPosition: { x: number; y: number; rotation: number };
   private lastSentAnimationState: ServerAnimationState | null = null;
+  private lastSentInputState: InputState | null = null;
   private dbCallbacks: { onInsert: any, onDelete: any, onUpdate: any } | null = null;
 
   private isDisposed: boolean = false;
@@ -378,7 +380,7 @@ export class GameEngine {
     if (!this.connection || !this.state.localPlayer) return;
 
     const now = performance.now();
-    const { position, rotationY, currentAnimationName, isMovingBackwards } = this.state.localPlayer;
+    const { position, rotationY, currentAnimationName, isMovingBackwards, input } = this.state.localPlayer;
     const currentRotation = rotationY + Math.PI; // Server expects rotation relative to +Z
 
     // Determine the animation state string to send to the server
@@ -394,16 +396,31 @@ export class GameEngine {
                            Math.abs(position.z - this.lastSentPosition.y) > POSITION_THRESHOLD; // Use Z for Y coord
     const rotationChanged = Math.abs(currentRotation - this.lastSentPosition.rotation) > ROTATION_THRESHOLD;
     const animationChanged = serverAnimationState !== this.lastSentAnimationState;
+    const inputStateChanged = input !== this.lastSentInputState;
 
     // Send position/rotation update if interval passed AND values changed
-    if (now - this.lastUpdateTime >= UPDATE_INTERVAL && (positionChanged || rotationChanged)) {
+    if (now - this.lastUpdateTime >= UPDATE_INTERVAL && (inputStateChanged || rotationChanged)) {
         try {
-            this.connection.reducers.updatePlayerPosition(
-              { x: position.x, y: position.z },
-              currentRotation
-            );
-            this.lastSentPosition = { x: position.x, y: position.z, rotation: currentRotation };
-            this.lastUpdateTime = now;
+          this.connection.reducers.updatePlayerRotation(currentRotation);
+          // send only updated input states
+          if (inputStateChanged) {
+            if (input.forward !== this.lastSentInputState?.forward) {
+              this.connection.reducers.updatePlayerMovement(InputKind.Forward, input.forward);
+            }
+            if (input.backward !== this.lastSentInputState?.backward) {
+              this.connection.reducers.updatePlayerMovement(InputKind.Backward, input.backward);
+            }
+            if (input.left !== this.lastSentInputState?.left) {
+              this.connection.reducers.updatePlayerMovement(InputKind.Left, input.left);
+            }
+            if (input.right !== this.lastSentInputState?.right) {
+              this.connection.reducers.updatePlayerMovement(InputKind.Right, input.right);
+            }
+          }
+
+          this.lastSentPosition = { x: position.x, y: position.z, rotation: currentRotation };
+          this.lastSentInputState = input;
+          this.lastUpdateTime = now;
         } catch (error) {
             console.error("Failed to send player position update:", error);
         }
@@ -454,10 +471,7 @@ export class GameEngine {
     // Send initial state immediately
     if (this.connection && this.state.localPlayer) {
       try {
-        this.connection.reducers.updatePlayerPosition(
-          { x: initialPosition.x, y: initialPosition.z },
-          initialServerRotation
-        );
+        this.connection.reducers.updatePlayerRotation(initialServerRotation);
         this.lastSentPosition = { x: initialPosition.x, y: initialPosition.z, rotation: initialServerRotation };
 
         this.connection.reducers.updatePlayerAnimationState(initialServerAnimState);

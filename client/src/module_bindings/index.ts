@@ -38,20 +38,32 @@ import { Disconnect } from "./disconnect_reducer.ts";
 export { Disconnect };
 import { UpdatePlayerAnimationState } from "./update_player_animation_state_reducer.ts";
 export { UpdatePlayerAnimationState };
-import { UpdatePlayerPosition } from "./update_player_position_reducer.ts";
-export { UpdatePlayerPosition };
+import { UpdatePlayerMovement } from "./update_player_movement_reducer.ts";
+export { UpdatePlayerMovement };
+import { UpdatePlayerRotation } from "./update_player_rotation_reducer.ts";
+export { UpdatePlayerRotation };
+import { UpdatePlayerScheduled } from "./update_player_scheduled_reducer.ts";
+export { UpdatePlayerScheduled };
 
 // Import and reexport all table handle types
 import { LoggedOutPlayerTableHandle } from "./logged_out_player_table.ts";
 export { LoggedOutPlayerTableHandle };
 import { PlayerTableHandle } from "./player_table.ts";
 export { PlayerTableHandle };
+import { UpdatePlayerScheduleTableHandle } from "./update_player_schedule_table.ts";
+export { UpdatePlayerScheduleTableHandle };
 
 // Import and reexport all types
+import { DbInputState } from "./db_input_state_type.ts";
+export { DbInputState };
 import { DbVector2 } from "./db_vector_2_type.ts";
 export { DbVector2 };
+import { InputKind } from "./input_kind_type.ts";
+export { InputKind };
 import { Player } from "./player_type.ts";
 export { Player };
+import { UpdatePlayerSchedule } from "./update_player_schedule_type.ts";
+export { UpdatePlayerSchedule };
 
 const REMOTE_MODULE = {
   tables: {
@@ -64,6 +76,11 @@ const REMOTE_MODULE = {
       tableName: "player",
       rowType: Player.getTypeScriptAlgebraicType(),
       primaryKey: "identity",
+    },
+    update_player_schedule: {
+      tableName: "update_player_schedule",
+      rowType: UpdatePlayerSchedule.getTypeScriptAlgebraicType(),
+      primaryKey: "scheduled_id",
     },
   },
   reducers: {
@@ -79,9 +96,17 @@ const REMOTE_MODULE = {
       reducerName: "update_player_animation_state",
       argsType: UpdatePlayerAnimationState.getTypeScriptAlgebraicType(),
     },
-    update_player_position: {
-      reducerName: "update_player_position",
-      argsType: UpdatePlayerPosition.getTypeScriptAlgebraicType(),
+    update_player_movement: {
+      reducerName: "update_player_movement",
+      argsType: UpdatePlayerMovement.getTypeScriptAlgebraicType(),
+    },
+    update_player_rotation: {
+      reducerName: "update_player_rotation",
+      argsType: UpdatePlayerRotation.getTypeScriptAlgebraicType(),
+    },
+    update_player_scheduled: {
+      reducerName: "update_player_scheduled",
+      argsType: UpdatePlayerScheduled.getTypeScriptAlgebraicType(),
     },
   },
   // Constructors which are used by the DbConnectionImpl to
@@ -113,7 +138,9 @@ export type Reducer = never
 | { name: "Connect", args: Connect }
 | { name: "Disconnect", args: Disconnect }
 | { name: "UpdatePlayerAnimationState", args: UpdatePlayerAnimationState }
-| { name: "UpdatePlayerPosition", args: UpdatePlayerPosition }
+| { name: "UpdatePlayerMovement", args: UpdatePlayerMovement }
+| { name: "UpdatePlayerRotation", args: UpdatePlayerRotation }
+| { name: "UpdatePlayerScheduled", args: UpdatePlayerScheduled }
 ;
 
 export class RemoteReducers {
@@ -151,20 +178,52 @@ export class RemoteReducers {
     this.connection.offReducer("update_player_animation_state", callback);
   }
 
-  updatePlayerPosition(position: DbVector2, rotation: number) {
-    const __args = { position, rotation };
+  updatePlayerMovement(kind: InputKind, enabled: boolean) {
+    const __args = { kind, enabled };
     let __writer = new BinaryWriter(1024);
-    UpdatePlayerPosition.getTypeScriptAlgebraicType().serialize(__writer, __args);
+    UpdatePlayerMovement.getTypeScriptAlgebraicType().serialize(__writer, __args);
     let __argsBuffer = __writer.getBuffer();
-    this.connection.callReducer("update_player_position", __argsBuffer, this.setCallReducerFlags.updatePlayerPositionFlags);
+    this.connection.callReducer("update_player_movement", __argsBuffer, this.setCallReducerFlags.updatePlayerMovementFlags);
   }
 
-  onUpdatePlayerPosition(callback: (ctx: ReducerEventContext, position: DbVector2, rotation: number) => void) {
-    this.connection.onReducer("update_player_position", callback);
+  onUpdatePlayerMovement(callback: (ctx: ReducerEventContext, kind: InputKind, enabled: boolean) => void) {
+    this.connection.onReducer("update_player_movement", callback);
   }
 
-  removeOnUpdatePlayerPosition(callback: (ctx: ReducerEventContext, position: DbVector2, rotation: number) => void) {
-    this.connection.offReducer("update_player_position", callback);
+  removeOnUpdatePlayerMovement(callback: (ctx: ReducerEventContext, kind: InputKind, enabled: boolean) => void) {
+    this.connection.offReducer("update_player_movement", callback);
+  }
+
+  updatePlayerRotation(rotation: number) {
+    const __args = { rotation };
+    let __writer = new BinaryWriter(1024);
+    UpdatePlayerRotation.getTypeScriptAlgebraicType().serialize(__writer, __args);
+    let __argsBuffer = __writer.getBuffer();
+    this.connection.callReducer("update_player_rotation", __argsBuffer, this.setCallReducerFlags.updatePlayerRotationFlags);
+  }
+
+  onUpdatePlayerRotation(callback: (ctx: ReducerEventContext, rotation: number) => void) {
+    this.connection.onReducer("update_player_rotation", callback);
+  }
+
+  removeOnUpdatePlayerRotation(callback: (ctx: ReducerEventContext, rotation: number) => void) {
+    this.connection.offReducer("update_player_rotation", callback);
+  }
+
+  updatePlayerScheduled(args: UpdatePlayerSchedule) {
+    const __args = { args };
+    let __writer = new BinaryWriter(1024);
+    UpdatePlayerScheduled.getTypeScriptAlgebraicType().serialize(__writer, __args);
+    let __argsBuffer = __writer.getBuffer();
+    this.connection.callReducer("update_player_scheduled", __argsBuffer, this.setCallReducerFlags.updatePlayerScheduledFlags);
+  }
+
+  onUpdatePlayerScheduled(callback: (ctx: ReducerEventContext, args: UpdatePlayerSchedule) => void) {
+    this.connection.onReducer("update_player_scheduled", callback);
+  }
+
+  removeOnUpdatePlayerScheduled(callback: (ctx: ReducerEventContext, args: UpdatePlayerSchedule) => void) {
+    this.connection.offReducer("update_player_scheduled", callback);
   }
 
 }
@@ -175,9 +234,19 @@ export class SetReducerFlags {
     this.updatePlayerAnimationStateFlags = flags;
   }
 
-  updatePlayerPositionFlags: CallReducerFlags = 'FullUpdate';
-  updatePlayerPosition(flags: CallReducerFlags) {
-    this.updatePlayerPositionFlags = flags;
+  updatePlayerMovementFlags: CallReducerFlags = 'FullUpdate';
+  updatePlayerMovement(flags: CallReducerFlags) {
+    this.updatePlayerMovementFlags = flags;
+  }
+
+  updatePlayerRotationFlags: CallReducerFlags = 'FullUpdate';
+  updatePlayerRotation(flags: CallReducerFlags) {
+    this.updatePlayerRotationFlags = flags;
+  }
+
+  updatePlayerScheduledFlags: CallReducerFlags = 'FullUpdate';
+  updatePlayerScheduled(flags: CallReducerFlags) {
+    this.updatePlayerScheduledFlags = flags;
   }
 
 }
@@ -191,6 +260,10 @@ export class RemoteTables {
 
   get player(): PlayerTableHandle {
     return new PlayerTableHandle(this.connection.clientCache.getOrCreateTable<Player>(REMOTE_MODULE.tables.player));
+  }
+
+  get updatePlayerSchedule(): UpdatePlayerScheduleTableHandle {
+    return new UpdatePlayerScheduleTableHandle(this.connection.clientCache.getOrCreateTable<UpdatePlayerSchedule>(REMOTE_MODULE.tables.update_player_schedule));
   }
 }
 

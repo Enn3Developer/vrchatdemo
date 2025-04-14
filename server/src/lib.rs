@@ -185,6 +185,8 @@ fn update_player_scheduled(ctx: &ReducerContext, args: UpdatePlayerSchedule) {
         log::error!("Last update happened *after* this scheduled update");
     }
 
+    log::info!("updating player {}", args.player_id);
+
     // Compute delta since last update
     let delta = ctx
         .timestamp
@@ -195,8 +197,24 @@ fn update_player_scheduled(ctx: &ReducerContext, args: UpdatePlayerSchedule) {
     let speed = input::MOVEMENT_SPEED * delta;
 
     if let Some(mut player) = ctx.db.player().player_id().find(args.player_id) {
-        // TODO: apply movement
+        // compute cosine and sine
+        let cos = player.rotation_yaw.cos();
+        let sin = player.rotation_yaw.sin();
 
+        // convert input state to vector
+        let (x, y) = player.input_state.into();
+
+        // rotate input vector
+        let nx = x * cos - y * sin;
+        let ny = x * sin + y * cos;
+
+        // normalize rotated input vector and multiply it by speed * delta
+        player.position = DbVector2::new(nx, ny).normalized() * speed;
+
+        // update the player
+        ctx.db.player().identity().update(player);
+
+        // schedule new update
         let schedule_timestamp =
             ctx.timestamp + TimeDuration::from_micros(input::MOVEMENT_RATE_UPDATE);
         ctx.db

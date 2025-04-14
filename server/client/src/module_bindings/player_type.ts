@@ -31,6 +31,7 @@ import {
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
 import { DbVector2 as __DbVector2 } from "./db_vector_2_type";
+import { DbInputState as __DbInputState } from "./db_input_state_type";
 
 export type Player = {
   identity: Identity,
@@ -40,6 +41,7 @@ export type Player = {
   position: __DbVector2,
   rotationYaw: number,
   animationState: string | undefined,
+  inputState: __DbInputState,
 };
 
 /**
@@ -59,6 +61,7 @@ export namespace Player {
       new ProductTypeElement("position", __DbVector2.getTypeScriptAlgebraicType()),
       new ProductTypeElement("rotationYaw", AlgebraicType.createF32Type()),
       new ProductTypeElement("animationState", AlgebraicType.createOptionType(AlgebraicType.createStringType())),
+      new ProductTypeElement("inputState", __DbInputState.getTypeScriptAlgebraicType()),
     ]);
   }
 

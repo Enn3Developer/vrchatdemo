@@ -32,6 +32,7 @@ import {
 } from "@clockworklabs/spacetimedb-sdk";
 import { Player } from "./player_type";
 import { DbVector2 as __DbVector2 } from "./db_vector_2_type";
+import { DbInputState as __DbInputState } from "./db_input_state_type";
 
 import { EventContext, Reducer, RemoteReducers, RemoteTables } from ".";
 

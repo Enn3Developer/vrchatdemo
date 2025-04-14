@@ -31,34 +31,30 @@ import {
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
 
-import { DbVector2 as __DbVector2 } from "./db_vector_2_type";
-
-export type UpdatePlayerPosition = {
-  position: __DbVector2,
+export type UpdatePlayerRotation = {
   rotation: number,
 };
 
 /**
  * A namespace for generated helper functions.
  */
-export namespace UpdatePlayerPosition {
+export namespace UpdatePlayerRotation {
   /**
   * A function which returns this type represented as an AlgebraicType.
   * This function is derived from the AlgebraicType used to generate this type.
   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
-      new ProductTypeElement("position", __DbVector2.getTypeScriptAlgebraicType()),
       new ProductTypeElement("rotation", AlgebraicType.createF32Type()),
     ]);
   }
 
-  export function serialize(writer: BinaryWriter, value: UpdatePlayerPosition): void {
-    UpdatePlayerPosition.getTypeScriptAlgebraicType().serialize(writer, value);
+  export function serialize(writer: BinaryWriter, value: UpdatePlayerRotation): void {
+    UpdatePlayerRotation.getTypeScriptAlgebraicType().serialize(writer, value);
   }
 
-  export function deserialize(reader: BinaryReader): UpdatePlayerPosition {
-    return UpdatePlayerPosition.getTypeScriptAlgebraicType().deserialize(reader);
+  export function deserialize(reader: BinaryReader): UpdatePlayerRotation {
+    return UpdatePlayerRotation.getTypeScriptAlgebraicType().deserialize(reader);
   }
 
 }

@@ -40,7 +40,7 @@ pub struct Player {
     pub input_state: DbInputState,
 }
 
-#[spacetimedb::table(name = update_player_schedule)]
+#[spacetimedb::table(name = update_player_schedule, scheduled(update_player_scheduled))]
 struct UpdatePlayerSchedule {
     #[primary_key]
     #[auto_inc]

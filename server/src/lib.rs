@@ -209,7 +209,7 @@ fn update_player_scheduled(ctx: &ReducerContext, args: UpdatePlayerSchedule) {
         let ny = x * sin + y * cos;
 
         // normalize rotated input vector and multiply it by speed * delta
-        player.position = DbVector2::new(nx, ny).normalized() * speed;
+        player.position += DbVector2::new(nx, ny).normalized() * speed;
 
         // update the player
         ctx.db.player().identity().update(player);

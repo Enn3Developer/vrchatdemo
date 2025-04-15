@@ -16,8 +16,8 @@ export function ConnectionPopup({ onConnect }: ConnectionPopupProps) {
 
     try {
       const connection = await moduleBindings.DbConnection.builder()
-        /*.withUri("wss://maincloud.spacetimedb.com")*/ .withUri("http://localhost:3000")
-        .withModuleName("vrchatdemo")
+        .withUri("http://enn3.ovh:14004") /*.withUri("http://localhost:3000")*/
+        .withModuleName("n-vrchatdemo")
         .onConnect((ctx, identity) => {
           onConnect(ctx, identity.toHexString());
         })

@@ -118,7 +118,7 @@ export class SceneManager {
         this.loader.load('/models/low_poly_stadium/scene.gltf', (gltf) => {
             if (this.isDisposed) return;
             this.stadiumModel = gltf.scene;
-            // this.stadiumModel.scale.set(4, 4, 4);
+            this.stadiumModel.scale.set(1, 1, 1);
             this.stadiumModel.position.set(0, 0, 0);
             if (!this.scene) {
                 console.warn("Scene is null during stadium load callback, likely disposed.");

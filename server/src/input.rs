@@ -38,7 +38,10 @@ pub struct DbInputState {
 
 impl From<DbInputState> for (f32, f32) {
     fn from(value: DbInputState) -> Self {
+        // movement on the x-axis
         let x = value.left.to_f32() - value.right.to_f32();
+
+        // movement on the y-axis
         let y = value.forward.to_f32() - value.backward.to_f32();
 
         (x, y)

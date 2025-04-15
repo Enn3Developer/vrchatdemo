@@ -93,7 +93,7 @@ function calculateNextPlayerState(player: LocalPlayerState, deltaTime: number): 
 
     return {
         ...player,
-        position: newPosition,
+        // position: newPosition,
         isMoving: isMoving,
         currentAnimationName: nextAnimationName,
         isMovingBackwards: isMoving && isLocallyMovingBackwards,
@@ -566,11 +566,12 @@ export class GameEngine {
 
         // If this update is for the local player, update the color
         if (playerId === localPlayerIdentity && this.state.localPlayer) {
-          if (newPlayer.hexColor !== oldPlayer.hexColor) {
+          if (newPlayer.hexColor !== oldPlayer.hexColor || newPlayer.position !== oldPlayer.position) {
             this.state = {
               ...this.state,
               localPlayer: {
                 ...this.state.localPlayer,
+                position: new THREE.Vector3(newPlayer.position.x, 0, newPlayer.position.y),
                 hexColor: newPlayer.hexColor
               }
             };

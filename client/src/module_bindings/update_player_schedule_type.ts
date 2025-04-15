@@ -33,7 +33,6 @@ import {
 export type UpdatePlayerSchedule = {
   scheduledId: bigint,
   scheduledAt: { tag: "Interval", value: TimeDuration } | { tag: "Time", value: Timestamp },
-  playerId: number,
   lastUpdate: Timestamp,
 };
 
@@ -49,7 +48,6 @@ export namespace UpdatePlayerSchedule {
     return AlgebraicType.createProductType([
       new ProductTypeElement("scheduledId", AlgebraicType.createU64Type()),
       new ProductTypeElement("scheduledAt", AlgebraicType.createScheduleAtType()),
-      new ProductTypeElement("playerId", AlgebraicType.createU32Type()),
       new ProductTypeElement("lastUpdate", AlgebraicType.createTimestampType()),
     ]);
   }

@@ -405,16 +405,16 @@ export class GameEngine {
           // send only updated input states
           if (inputStateChanged) {
             if (input.forward !== this.lastSentInputState?.forward) {
-              this.connection.reducers.updatePlayerMovement(InputKind.Forward, input.forward);
+              this.connection.reducers.updatePlayerMovement(<InputKind.Forward | InputKind.Backward | InputKind.Left | InputKind.Right>InputKind.Forward, input.forward);
             }
             if (input.backward !== this.lastSentInputState?.backward) {
-              this.connection.reducers.updatePlayerMovement(InputKind.Backward, input.backward);
+              this.connection.reducers.updatePlayerMovement(<InputKind.Forward | InputKind.Backward | InputKind.Left | InputKind.Right>InputKind.Backward, input.backward);
             }
             if (input.left !== this.lastSentInputState?.left) {
-              this.connection.reducers.updatePlayerMovement(InputKind.Left, input.left);
+              this.connection.reducers.updatePlayerMovement(<InputKind.Forward | InputKind.Backward | InputKind.Left | InputKind.Right>InputKind.Left, input.left);
             }
             if (input.right !== this.lastSentInputState?.right) {
-              this.connection.reducers.updatePlayerMovement(InputKind.Right, input.right);
+              this.connection.reducers.updatePlayerMovement(<InputKind.Forward | InputKind.Backward | InputKind.Left | InputKind.Right>InputKind.Right, input.right);
             }
           }
 

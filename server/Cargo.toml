@@ -11,7 +11,10 @@ crate-type = ["cdylib"]
 [dependencies]
 spacetimedb = "1.0.1"
 log = "0.4"
-gltf = "1.4"
 once_cell = "1.21"
 rapier3d = "0.24"
+nalgebra = "0.33"
+
+[build-dependencies]
+gltf = "1.4"
 nalgebra = "0.33"

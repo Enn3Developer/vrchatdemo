@@ -1,16 +1,16 @@
 pub mod input;
 pub mod math;
-mod rapier;
+pub mod rapier;
 
 use crate::input::{DbInputState, InputKind};
 use crate::rapier::{default_character_controller, move_shape, physics_step, COLLIDER_SET};
-use gltf::{Gltf, Node};
 use math::DbVector2;
-use nalgebra::{ArrayStorage, Matrix4, Transform3};
 use rapier3d::prelude::{
     ActiveCollisionTypes, ColliderBuilder, Isometry, Point, TriMeshFlags, Vector,
 };
 use spacetimedb::{ReducerContext, ScheduleAt, Table, TimeDuration};
+
+import_collider_data!();
 
 // Helper function to generate a random hex color using ReducerContext
 fn generate_random_hex_color(ctx: &ReducerContext) -> String {
@@ -23,84 +23,18 @@ fn generate_random_hex_color(ctx: &ReducerContext) -> String {
     format!("#{:02X}{:02X}{:02X}", r, g, b)
 }
 
-fn generate_collider_for_node(
-    node: Node,
-    transform: Transform3<f32>,
-    buffers: &Vec<gltf::buffer::Data>,
-) {
-    // get the current node's transformation
-    let node_transform: Transform3<f32> = Transform3::from_matrix_unchecked(
-        Matrix4::<f32>::from_data(ArrayStorage(node.transform().matrix())),
-    );
-
-    // compute the overall transformation of current node * parent node
-    let transform: Transform3<f32> = node_transform * transform;
-
-    // for every node's child
-    for child in node.children() {
-        // generate the collider for that child
-        generate_collider_for_node(child, transform, buffers);
-    }
-
-    // if this node has a mesh
-    if let Some(mesh) = node.mesh() {
-        // setup vertex data for the trimesh
-        let mut vertices = vec![];
-        let mut indices = vec![];
-
-        // for every primitive in the mesh
-        for primitive in mesh.primitives() {
-            // set up the reader
-            let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
-
-            // read all vertex positions
-            if let Some(positions) = reader.read_positions() {
-                for vertex_position in positions {
-                    // apply the node transformation to the vertex
-                    let vertex = transform
-                        * Point::new(vertex_position[0], vertex_position[1], vertex_position[2]);
-
-                    vertices.push(vertex);
-                }
-            }
-
-            // read all indices for the faces of the mesh
-            if let Some(primitive_indices) = reader.read_indices() {
-                // set up data
-                let mut vector: [u32; 3] = [0, 0, 0];
-                let mut i = 0;
-
-                // for every index
-                for index in primitive_indices.into_u32() {
-                    // save the index in an array
-                    vector[i] = index;
-                    i += 1;
-
-                    // if a triangle is formed
-                    if i >= 3 {
-                        // save the indices of the triangle
-                        indices.push(vector);
-                        // and reset the counter
-                        i = 0;
-                    }
-                }
-            }
-        }
-
-        // log all the mesh data
-        let transform = node.transform().decomposed();
-        log::info!(
-            "Mesh #{} -- vertices: {} -- indices: {} -- position: {:?}",
-            mesh.index(),
-            vertices.len(),
-            indices.len(),
-            transform.0
-        );
+fn generate_colliders() {
+    for collider_data in COLLIDER_DATA.iter() {
+        let vertices = collider_data
+            .vertices
+            .iter()
+            .map(|vertex| Point::<f32>::new(vertex.0, vertex.1, vertex.2))
+            .collect();
 
         // create collider with mesh data
         let mut collider = ColliderBuilder::trimesh_with_flags(
             vertices,
-            indices,
+            collider_data.indices.clone(),
             TriMeshFlags::FIX_INTERNAL_EDGES,
         )
         .expect("can't create collider from gltf model")
@@ -154,51 +88,7 @@ struct UpdatePlayerSchedule {
 
 #[spacetimedb::reducer(init)]
 pub fn init(ctx: &ReducerContext) {
-    let model_bytes = include_bytes!("../../client/src/assets/models/low_poly_stadium/scene.gltf");
-
-    // import model
-    let mut gltf = Gltf::from_slice(model_bytes.as_slice()).expect("can't load gltf model");
-
-    let mut buffers: Vec<gltf::buffer::Data> = vec![];
-    let gltf_buffers = gltf.document.buffers().clone();
-
-    for buffer in gltf_buffers {
-        if let gltf::buffer::Source::Bin = buffer.source() {
-            let blob = gltf.blob.take();
-
-            if let Some(mut blob) = blob {
-                while blob.len() % 4 != 0 {
-                    blob.push(0);
-                }
-
-                buffers.push(gltf::buffer::Data(blob));
-            }
-        } else {
-            // here we assume the uri of the file is `scene.bin`
-            log::info!("buffer is from URI");
-
-            let mut blob =
-                include_bytes!("../../client/src/assets/models/low_poly_stadium/scene.bin")
-                    .to_vec();
-
-            while blob.len() % 4 != 0 {
-                blob.push(0);
-            }
-
-            buffers.push(gltf::buffer::Data(blob));
-        }
-    }
-
-    for scene in gltf.scenes() {
-        for node in scene.nodes() {
-            let initial_scaling = 1.0;
-            let identity: Transform3<f32> = Transform3::from_matrix_unchecked(
-                Matrix4::<f32>::identity().scale(initial_scaling),
-            );
-
-            generate_collider_for_node(node, identity, &buffers);
-        }
-    }
+    generate_colliders();
 
     let schedule_timestamp = TimeDuration::from_micros(input::MOVEMENT_RATE_UPDATE);
 

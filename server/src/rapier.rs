@@ -36,6 +36,11 @@ pub static QUERY_PIPELINE: Lazy<Mutex<QueryPipeline>> =
     Lazy::new(|| Mutex::new(QueryPipeline::new()));
 pub static PLAYER_SHAPE: Lazy<Capsule> = Lazy::new(|| Capsule::new_y(0.5, 0.4));
 
+pub struct ColliderData<V, I> {
+    pub vertices: Vec<V>,
+    pub indices: Vec<I>,
+}
+
 /// Default character controller
 pub fn default_character_controller() -> KinematicCharacterController {
     let mut character_controller = KinematicCharacterController::default();
@@ -129,4 +134,11 @@ pub fn move_shape(
         QueryFilter::exclude_dynamic(),
         |_collision| {},
     )
+}
+
+#[macro_export]
+macro_rules! import_collider_data {
+    () => {
+        include!(concat!(env!("OUT_DIR"), "/collider_data.rs"));
+    };
 }

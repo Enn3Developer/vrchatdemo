@@ -10,11 +10,6 @@ trait ConvertData<V, I> {
     fn convert_data(self) -> Vec<ColliderData<V, I>>;
 }
 
-/// Like Display but without the formatter
-trait WriteData {
-    fn write_data(&self) -> String;
-}
-
 pub trait ToBytes {
     fn to_bytes(&self) -> Vec<u8>;
 }
@@ -122,72 +117,6 @@ impl ConvertData<VectorTuple, VectorArray<u32>> for Vec<AlgebraColliderData> {
                     .collect(),
             })
             .collect()
-    }
-}
-
-impl WriteData for (f32, f32, f32) {
-    fn write_data(&self) -> String {
-        format!("({}, {}, {})", self.0, self.1, self.2)
-    }
-}
-
-impl<T: WriteData, const N: usize> WriteData for [T; N] {
-    fn write_data(&self) -> String {
-        let mut data = String::from("[");
-
-        for element in self {
-            data.push_str(&element.write_data());
-            data.push(',');
-        }
-
-        data.push_str("]");
-        data
-    }
-}
-
-impl<T: WriteData> WriteData for &[T] {
-    fn write_data(&self) -> String {
-        let mut data = String::from("[");
-
-        for element in self.iter() {
-            data.push_str(&element.write_data());
-            data.push(',');
-        }
-
-        data.push_str("]");
-        data
-    }
-}
-
-impl WriteData for [u32; 3] {
-    fn write_data(&self) -> String {
-        format!("[{}, {}, {}]", self[0], self[1], self[2])
-    }
-}
-
-impl WriteData for NormalColliderData {
-    fn write_data(&self) -> String {
-        let mut data = String::from("ColliderData<(f32, f32, f32), [u32;3]> {");
-
-        data.push_str(&format!("indices: {},", self.indices.write_data()));
-        data.push_str(&format!("vertices: {},", self.vertices.write_data()));
-
-        data.push_str("}");
-        data
-    }
-}
-
-impl<T: WriteData> WriteData for Vec<T> {
-    fn write_data(&self) -> String {
-        let mut data = String::from("vec![");
-
-        for element in self {
-            data.push_str(&element.write_data());
-            data.push(',');
-        }
-
-        data.push_str("]");
-        data
     }
 }
 

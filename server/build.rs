@@ -3,7 +3,7 @@ use gltf::Node;
 use nalgebra::{ArrayStorage, Matrix4, Point3, Transform3};
 use std::path::PathBuf;
 
-const MODEL_PATH: &'static str = "../client/src/assets/models/low_poly_stadium/scene.gltf";
+const MODEL_PATH: &'static str = "../client/public/models/forest_scene/scene.glb";
 const INITIAL_SCALING: f32 = 1.0;
 
 trait ConvertData<V, I> {

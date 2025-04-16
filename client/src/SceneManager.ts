@@ -115,7 +115,7 @@ export class SceneManager {
         this.onAssetsLoadedCallback = onAssetsLoaded;
         
         // Load Stadium
-        this.loader.load('/models/low_poly_stadium/scene.gltf', (gltf) => {
+        this.loader.load('/models/forest_scene/scene.glb', (gltf) => {
             if (this.isDisposed) return;
             this.stadiumModel = gltf.scene;
             this.stadiumModel.scale.set(1, 1, 1);

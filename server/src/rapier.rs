@@ -40,6 +40,112 @@ pub struct ColliderData<V, I> {
     pub vertices: Vec<V>,
     pub indices: Vec<I>,
 }
+pub type VectorTuple = (f32, f32, f32);
+pub type VectorArray<T> = [T; 3];
+pub type NormalColliderData = ColliderData<VectorTuple, VectorArray<u32>>;
+
+pub trait FromBytes {
+    type Output;
+
+    fn from_bytes(bytes: &[u8], index: &mut usize) -> Self::Output;
+}
+
+impl FromBytes for [u32; 3] {
+    type Output = [u32; 3];
+
+    fn from_bytes(bytes: &[u8], index: &mut usize) -> Self::Output {
+        let mut data = [0, 0, 0];
+
+        for i in 0..3 {
+            let bytes = [
+                bytes[*index],
+                bytes[*index + 1],
+                bytes[*index + 2],
+                bytes[*index + 3],
+            ];
+            data[i] = u32::from_le_bytes(bytes);
+            *index += 4;
+        }
+
+        data
+    }
+}
+
+impl FromBytes for (f32, f32, f32) {
+    type Output = (f32, f32, f32);
+
+    fn from_bytes(bytes: &[u8], index: &mut usize) -> Self::Output {
+        let mut data = (0.0, 0.0, 0.0);
+
+        let element_bytes = [
+            bytes[*index],
+            bytes[*index + 1],
+            bytes[*index + 2],
+            bytes[*index + 3],
+        ];
+        data.0 = f32::from_le_bytes(element_bytes);
+        *index += 4;
+
+        let element_bytes = [
+            bytes[*index],
+            bytes[*index + 1],
+            bytes[*index + 2],
+            bytes[*index + 3],
+        ];
+        data.1 = f32::from_le_bytes(element_bytes);
+        *index += 4;
+
+        let element_bytes = [
+            bytes[*index],
+            bytes[*index + 1],
+            bytes[*index + 2],
+            bytes[*index + 3],
+        ];
+        data.2 = f32::from_le_bytes(element_bytes);
+        *index += 4;
+
+        data
+    }
+}
+
+impl<T: FromBytes> FromBytes for Vec<T> {
+    type Output = Vec<T::Output>;
+
+    fn from_bytes(bytes: &[u8], index: &mut usize) -> Self::Output {
+        let mut data = vec![];
+
+        let len_bytes = [
+            bytes[*index],
+            bytes[*index + 1],
+            bytes[*index + 2],
+            bytes[*index + 3],
+            bytes[*index + 4],
+            bytes[*index + 5],
+            bytes[*index + 6],
+            bytes[*index + 7],
+        ];
+        let len = u64::from_le_bytes(len_bytes);
+        *index += 8;
+
+        for i in 0..len {
+            let element_data = T::from_bytes(bytes, index);
+            data.push(element_data);
+        }
+
+        data
+    }
+}
+
+impl FromBytes for NormalColliderData {
+    type Output = NormalColliderData;
+
+    fn from_bytes(bytes: &[u8], index: &mut usize) -> Self::Output {
+        let indices = Vec::<VectorArray<u32>>::from_bytes(bytes, index);
+        let vertices = Vec::<VectorTuple>::from_bytes(bytes, index);
+
+        NormalColliderData { indices, vertices }
+    }
+}
 
 /// Default character controller
 pub fn default_character_controller() -> KinematicCharacterController {
@@ -139,6 +245,7 @@ pub fn move_shape(
 #[macro_export]
 macro_rules! import_collider_data {
     () => {
-        include!(concat!(env!("OUT_DIR"), "/collider_data.rs"));
+        const COLLIDER_DATA: &'static [u8] =
+            include_bytes!(concat!(env!("OUT_DIR"), "/collider_data"));
     };
 }

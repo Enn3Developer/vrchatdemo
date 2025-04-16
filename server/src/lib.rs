@@ -3,7 +3,10 @@ pub mod math;
 pub mod rapier;
 
 use crate::input::{DbInputState, InputKind};
-use crate::rapier::{default_character_controller, move_shape, physics_step, COLLIDER_SET};
+use crate::rapier::{
+    default_character_controller, move_shape, physics_step, FromBytes, NormalColliderData,
+    COLLIDER_SET,
+};
 use math::DbVector2;
 use rapier3d::prelude::{
     ActiveCollisionTypes, ColliderBuilder, Isometry, Point, TriMeshFlags, Vector,
@@ -24,7 +27,12 @@ fn generate_random_hex_color(ctx: &ReducerContext) -> String {
 }
 
 fn generate_colliders() {
-    for collider_data in COLLIDER_DATA.iter() {
+    let mut index = 0;
+    let colliders_data = Vec::<NormalColliderData>::from_bytes(COLLIDER_DATA, &mut index);
+
+    log::info!("Found {} colliders", colliders_data.len());
+
+    for collider_data in colliders_data.iter() {
         let vertices = collider_data
             .vertices
             .iter()

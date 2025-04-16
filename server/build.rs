@@ -12,7 +12,11 @@ trait ConvertData<V, I> {
 
 /// Like Display but without the formatter
 trait WriteData {
-    fn write_data(self) -> String;
+    fn write_data(&self) -> String;
+}
+
+pub trait ToBytes {
+    fn to_bytes(&self) -> Vec<u8>;
 }
 
 pub struct ColliderData<V, I> {
@@ -40,13 +44,15 @@ impl AlgebraColliderData {
         // compute the overall transformation of current node * parent node
         let transform: Transform3<f32> = node_transform * transform;
 
+        let mut collider_data = vec![];
+
         // for every node's child
         for child in node.children() {
             // generate the collider for that child
-            Self::generate_collider_data(child, transform, buffers);
+            for collider in Self::generate_collider_data(child, transform, buffers) {
+                collider_data.push(collider);
+            }
         }
-
-        let mut collider_data = vec![];
 
         // if this node has a mesh
         if let Some(mesh) = node.mesh() {
@@ -120,19 +126,47 @@ impl ConvertData<VectorTuple, VectorArray<u32>> for Vec<AlgebraColliderData> {
 }
 
 impl WriteData for (f32, f32, f32) {
-    fn write_data(self) -> String {
+    fn write_data(&self) -> String {
         format!("({}, {}, {})", self.0, self.1, self.2)
     }
 }
 
+impl<T: WriteData, const N: usize> WriteData for [T; N] {
+    fn write_data(&self) -> String {
+        let mut data = String::from("[");
+
+        for element in self {
+            data.push_str(&element.write_data());
+            data.push(',');
+        }
+
+        data.push_str("]");
+        data
+    }
+}
+
+impl<T: WriteData> WriteData for &[T] {
+    fn write_data(&self) -> String {
+        let mut data = String::from("[");
+
+        for element in self.iter() {
+            data.push_str(&element.write_data());
+            data.push(',');
+        }
+
+        data.push_str("]");
+        data
+    }
+}
+
 impl WriteData for [u32; 3] {
-    fn write_data(self) -> String {
+    fn write_data(&self) -> String {
         format!("[{}, {}, {}]", self[0], self[1], self[2])
     }
 }
 
 impl WriteData for NormalColliderData {
-    fn write_data(self) -> String {
+    fn write_data(&self) -> String {
         let mut data = String::from("ColliderData<(f32, f32, f32), [u32;3]> {");
 
         data.push_str(&format!("indices: {},", self.indices.write_data()));
@@ -144,16 +178,75 @@ impl WriteData for NormalColliderData {
 }
 
 impl<T: WriteData> WriteData for Vec<T> {
-    fn write_data(self) -> String {
+    fn write_data(&self) -> String {
         let mut data = String::from("vec![");
 
-        for element in self.into_iter() {
+        for element in self {
             data.push_str(&element.write_data());
             data.push(',');
         }
 
         data.push_str("]");
         data
+    }
+}
+
+impl ToBytes for NormalColliderData {
+    fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes = vec![];
+
+        let mut indices_bytes = self.indices.to_bytes();
+        let mut vertices_bytes = self.vertices.to_bytes();
+
+        bytes.append(&mut indices_bytes);
+        bytes.append(&mut vertices_bytes);
+
+        bytes
+    }
+}
+
+impl<T: ToBytes> ToBytes for Vec<T> {
+    fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes = vec![];
+
+        let mut len = (self.len() as u64).to_le_bytes().to_vec();
+        bytes.append(&mut len);
+        for element in self {
+            let mut element_bytes = element.to_bytes();
+            bytes.append(&mut element_bytes);
+        }
+
+        bytes
+    }
+}
+
+impl ToBytes for [u32; 3] {
+    fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes = vec![];
+
+        for i in 0..3 {
+            let mut element_bytes = self[i].to_le_bytes().to_vec();
+            bytes.append(&mut element_bytes);
+        }
+
+        bytes
+    }
+}
+
+impl ToBytes for (f32, f32, f32) {
+    fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes = vec![];
+
+        let mut element_bytes = self.0.to_le_bytes().to_vec();
+        bytes.append(&mut element_bytes);
+
+        let mut element_bytes = self.1.to_le_bytes().to_vec();
+        bytes.append(&mut element_bytes);
+
+        let mut element_bytes = self.2.to_le_bytes().to_vec();
+        bytes.append(&mut element_bytes);
+
+        bytes
     }
 }
 
@@ -172,23 +265,21 @@ fn main() {
                 Matrix4::<f32>::identity().scale(INITIAL_SCALING),
             );
 
-            collider_data.append(
-                &mut ColliderData::generate_collider_data(node, identity, &buffers).convert_data(),
-            );
+            for collider in
+                ColliderData::generate_collider_data(node, identity, &buffers).convert_data()
+            {
+                collider_data.push(collider);
+            }
         }
     }
 
-    // write content of the rust file
-    let mut content = String::from("use crate::rapier::ColliderData;\n");
-    content.push_str(&format!(
-        "pub const COLLIDER_DATA: Vec<ColliderData<(f32, f32, f32), [u32;3]>> = {};",
-        collider_data.write_data()
-    ));
+    // write content of the collider data file
+    let content = collider_data.to_bytes();
 
     // file_path: $OUT_DIR/collider_data.rs
     let mut file_path = PathBuf::new();
     file_path.push(&std::env::var_os("OUT_DIR").unwrap());
-    file_path.push("collider_data.rs");
+    file_path.push("collider_data");
 
-    std::fs::write(file_path, content.as_bytes()).expect("can't write to output file");
+    std::fs::write(file_path, content).expect("can't write to output file");
 }
